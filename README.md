@@ -1,4 +1,4 @@
-# Simplified yacc prolog parser
+# Parseca prolog parser
 ## Preparation:
 ### Ubuntu
 ```
