@@ -3,10 +3,12 @@
 ### Ubuntu
 ```
 sudo apt-get install -y python-pytest
+pip install -U parsita
 ```
 ### MacOs
 ```
 pip install -U pytest
+pip install -U parsita
 ```
 ## Usage:
 ```
