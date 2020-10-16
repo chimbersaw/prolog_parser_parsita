@@ -23,6 +23,8 @@ python prolog_parser.py input_file
  
  --module — parse only module declaration (the one with the keyword 'module')
  
+ --list - parse one list
+ 
  --relation — parse one relation (with a dot in the end)
  
  --prog — parse while program
