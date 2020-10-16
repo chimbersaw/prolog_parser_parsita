@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from parsita import *
 import sys
 
@@ -47,17 +48,18 @@ class PrologParser(TextParsers, whitespace=r'[ \t\n]*'):
     rel_body = ((atom & CORK & body & DOT) > (lambda x: 'relation ' + 'head ' + x[0] + ' body ' + x[2]))
     relation = rel_no_body | rel_body
 
-    type_seq = TYPE
-    typedef = TYPE
+    typeseq_brackets = (LBR & typeseq & RBR) > join_list
+    typeseq = rep1sep(atom | VAR | typeseq_brackets, ARROW) > (lambda x: ' -> '.join(x))
+    typedef = (TYPE & ID & typeseq << DOT) > (lambda x: 'typedef ' + x[1] + ' (' + x[2] + ')')
 
-    program = (module & (rep(relation) > newline)) > newline
+    program = (module & (rep(typedef) > newline) & (rep(relation) > newline)) > (lambda x: newline(filter(None, x)))
 
 
 def parse(s, args):
     if '--atom' in args:
         return PrologParser.atom.parse(s)
     elif '--typeexpr' in args:
-        return PrologParser.type_seq.parse(s)
+        return PrologParser.typeseq.parse(s)
     elif '--type' in args:
         return PrologParser.typedef.parse(s)
     elif '--module' in args:
@@ -74,10 +76,11 @@ def main(args):
     filename = args[-1]
     with open(filename, 'r') as file:
         result = parse(file.read(), args)
+        out = sys.stdout if 'test' in args else open(filename + '.out', 'w')
         if type(result) == Success:
-            print(result.value, file=open(filename + '.out', 'w'))
+            print(result.value, file=out)
         else:
-            print(result.message)
+            print(result.message)  # put file=out here if you want errors to appear in .out file
 
 
 if __name__ == '__main__':
