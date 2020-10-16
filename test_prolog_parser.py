@@ -20,7 +20,10 @@ def test_integrate_correct(tmp_path, monkeypatch, capsys):
               'a (b c) :- x, y, z.',
               'f.       \n\n\n\n  f :- g.      \n '
               '         f \n    :-   g, \n\n\nh   ; t  . '
-              '   \n\n\n']
+              '   \n\n\n',
+              'a [[X, [H | T]] | Z].',
+              'g [X] Y :- f X Y.',
+              'f [a, [A | [B, C, D]], a (b c)] x y [z, []] :- t [a c, b].']
 
     outputs = ['MODULE (ID test)\n',
                'MODULE (ID test)\ntypedef (ID t) ((ID f) -> (ID o))\n',
@@ -40,7 +43,12 @@ def test_integrate_correct(tmp_path, monkeypatch, capsys):
                'relation head atom ((ID a) atom ((ID b) (ID c))) body (conjunction (ID x) (conjunction (ID y) (ID '
                'z)))\n',
                'relation head (ID f)\nrelation head (ID f) body (ID g)\nrelation head (ID f) body (disjunction ('
-               'conjunction (ID g) (ID h)) (ID t))\n']
+               'conjunction (ID g) (ID h)) (ID t))\n',
+               'relation head atom ((ID a) [[(variable X), [(variable H) | (variable T)]] | (variable Z)])\n',
+               'relation head atom ((ID g) [(variable X)] (variable Y)) body atom ((ID f) (variable X) (variable Y))\n',
+               'relation head atom ((ID f) [(ID a), [(variable A) | [(variable B), (variable C), (variable D)]], '
+               'atom ((ID a) atom ((ID b) (ID c)))] atom ((ID x) atom ((ID y) [(ID z), []]))) body atom ((ID t) [atom '
+               '((ID a) (ID c)), (ID b)])\n']
 
     assert len(inputs) == len(outputs)
 
@@ -61,7 +69,9 @@ def test_integrate_incorrect(tmp_path, monkeypatch, capsys):
               'module test. type t f -> o.. type t f -> o. f :- name. a (b c) :- x, y, z.',
               'module test. type t f -> o. type t f -> o f :- name. a (b c) :- x, y, z.',
               'module test. type t f -> o. (type t f -> o.)',
-              'module test. (type t f -> o. type t f -> o.)']
+              'module test. (type t f -> o. type t f -> o.)',
+              '[X] Y :- f X Y.',
+              'f :- g ; h. [] x.']
 
     for s in inputs:
         (tmp_path / 'input.mod').write_text(s)
@@ -112,6 +122,8 @@ def test_unit_atom():
     assert type(parser('a ((A)) b')) == Success
     assert type(parser('a b c d')) == Success
     assert type(parser('a b C')) == Success
+    assert type(parser('g [X] Y')) == Success
+    assert type(parser('a [a, b, c, []] Y x')) == Success
 
     assert type(parser('a ((b) c)')) == Failure
     assert type(parser('a (B c)')) == Failure
@@ -126,6 +138,9 @@ def test_unit_atom():
     assert type(parser('a (((b c))')) == Failure
     assert type(parser('a module')) == Failure
     assert type(parser('A')) == Failure
+    assert type(parser('G [X] Y')) == Failure
+    assert type(parser('[X] Y')) == Failure
+    assert type(parser('[] a')) == Failure
 
 
 def test_unit_module():
@@ -164,6 +179,25 @@ def test_unit_type():
     assert type(parser('.')) == Failure
     assert type(parser('type -> x.')) == Failure
     assert type(parser('type filter A -> B -> o')) == Failure
+
+
+def test_unit_LIST():
+    parser = PrologParser.LIST.parse
+    assert type(parser('[]')) == Success
+    assert type(parser('[X, Y, Z]')) == Success
+    assert type(parser('[a (b c), d, Z]')) == Success
+    assert type(parser('[H | T]')) == Success
+    assert type(parser('[a (b c) | T]')) == Success
+    assert type(parser('[[X, [H | T]] | Z]')) == Success
+    assert type(parser('[[[]]]')) == Success
+
+    assert type(parser('[')) == Failure
+    assert type(parser(']a')) == Failure
+    assert type(parser('b')) == Failure
+    assert type(parser('c[')) == Failure
+    assert type(parser('[H | abc]')) == Failure
+    assert type(parser('[H | A b c]')) == Failure
+    assert type(parser('[]]')) == Failure
 
 
 def test_unit_rel():

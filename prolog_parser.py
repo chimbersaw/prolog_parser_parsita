@@ -30,6 +30,9 @@ class PrologParser(TextParsers, whitespace=r'[ \t\n]*'):
     COMMA = lit(',')
     LBR = lit('(')
     RBR = lit(')')
+    LBRSQ = lit('[')
+    RBRSQ = lit(']')
+    VBAR = lit('|')
     ARROW = lit('->')
     VAR = reg(r'[A-Z][a-zA-Z_0-9]*') > named_print('variable')
     ID = pred(reg(r'[a-z_][a-zA-Z_0-9]*'), no_match(KEYWORD.parse), 'ID') > named_print('ID')
@@ -37,7 +40,7 @@ class PrologParser(TextParsers, whitespace=r'[ \t\n]*'):
     module = (MODULE & ID & DOT > (lambda x: "MODULE " + x[1])) | lit('')
 
     atom = (atom_args > (lambda x: 'atom (' + x + ')')) | ID
-    atom_args = (ID & rep1(atom_brackets | VAR | ID)) > (lambda x: x[0] + ' ' + ' '.join(x[1]))
+    atom_args = (ID & rep1(atom_brackets | VAR | ID | LIST)) > (lambda x: x[0] + ' ' + ' '.join(x[1]))
     atom_brackets = (atom | VAR > join_list) | (LBR & atom_brackets & RBR > (lambda x: join_list(x[1])))
 
     T = (LBR & body & RBR) | atom > join_list
@@ -52,6 +55,10 @@ class PrologParser(TextParsers, whitespace=r'[ \t\n]*'):
     typeseq = rep1sep(atom | VAR | typeseq_brackets, ARROW) > (lambda x: ' -> '.join(x))
     typedef = (TYPE & ID & typeseq << DOT) > (lambda x: 'typedef ' + x[1] + ' (' + x[2] + ')')
 
+    LIST_ENUM = (LBRSQ >> repsep(atom | VAR | LIST, COMMA) << RBRSQ) > (lambda x: '[' + ', '.join(x) + ']')
+    LIST_HEAD_TAIL = (LBRSQ >> (atom | VAR | LIST) << VBAR & (VAR | LIST) << RBRSQ) > (lambda x: '[' + x[0] + ' | ' + x[1] + ']')
+    LIST = LIST_ENUM | LIST_HEAD_TAIL
+
     program = (module & (rep(typedef) > newline) & (rep(relation) > newline)) > (lambda x: newline(filter(None, x)))
 
 
@@ -64,6 +71,8 @@ def parse(s, args):
         return PrologParser.typedef.parse(s)
     elif '--module' in args:
         return PrologParser.module.parse(s)
+    elif '--list' in args:
+        return PrologParser.LIST.parse(s)
     elif '--relation' in args:
         return PrologParser.relation.parse(s)
     elif '--prog' in args:
