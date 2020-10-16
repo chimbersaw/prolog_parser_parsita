@@ -56,7 +56,7 @@ class PrologParser(TextParsers, whitespace=r'[ \t\n]*'):
     typedef = (TYPE & ID & typeseq << DOT) > (lambda x: 'typedef ' + x[1] + ' (' + x[2] + ')')
 
     LIST_ENUM = (LBRSQ >> repsep(atom | VAR | LIST, COMMA) << RBRSQ) > (lambda x: '[' + ', '.join(x) + ']')
-    LIST_HEAD_TAIL = (LBRSQ >> (atom | VAR | LIST) << VBAR & (VAR | LIST) << RBRSQ) > (lambda x: '[' + x[0] + ' | ' + x[1] + ']')
+    LIST_HEAD_TAIL = (LBRSQ >> (atom | VAR | LIST) << VBAR & VAR << RBRSQ) > (lambda x: '[' + x[0] + ' | ' + x[1] + ']')
     LIST = LIST_ENUM | LIST_HEAD_TAIL
 
     program = (module & (rep(typedef) > newline) & (rep(relation) > newline)) > (lambda x: newline(filter(None, x)))

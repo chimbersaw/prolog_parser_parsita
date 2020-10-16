@@ -23,7 +23,7 @@ def test_integrate_correct(tmp_path, monkeypatch, capsys):
               '   \n\n\n',
               'a [[X, [H | T]] | Z].',
               'g [X] Y :- f X Y.',
-              'f [a, [A | [B, C, D]], a (b c)] x y [z, []] :- t [a c, b].']
+              'f [a, [A | B], a (b c)] x y [z, []] :- t [a c, b].']
 
     outputs = ['MODULE (ID test)\n',
                'MODULE (ID test)\ntypedef (ID t) ((ID f) -> (ID o))\n',
@@ -46,9 +46,8 @@ def test_integrate_correct(tmp_path, monkeypatch, capsys):
                'conjunction (ID g) (ID h)) (ID t))\n',
                'relation head atom ((ID a) [[(variable X), [(variable H) | (variable T)]] | (variable Z)])\n',
                'relation head atom ((ID g) [(variable X)] (variable Y)) body atom ((ID f) (variable X) (variable Y))\n',
-               'relation head atom ((ID f) [(ID a), [(variable A) | [(variable B), (variable C), (variable D)]], '
-               'atom ((ID a) atom ((ID b) (ID c)))] atom ((ID x) atom ((ID y) [(ID z), []]))) body atom ((ID t) [atom '
-               '((ID a) (ID c)), (ID b)])\n']
+               'relation head atom ((ID f) [(ID a), [(variable A) | (variable B)], atom ((ID a) atom ((ID b) (ID '
+               'c)))] atom ((ID x) atom ((ID y) [(ID z), []]))) body atom ((ID t) [atom ((ID a) (ID c)), (ID b)])\n']
 
     assert len(inputs) == len(outputs)
 
