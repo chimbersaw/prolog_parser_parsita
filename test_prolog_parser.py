@@ -23,7 +23,11 @@ def test_integrate_correct(tmp_path, monkeypatch, capsys):
               '   \n\n\n',
               'a [[X, [H | T]] | Z].',
               'g [X] Y :- f X Y.',
-              'f [a, [A | B], a (b c)] x y [z, []] :- t [a c, b].']
+              'f [a, [A | B], a (b c)] x y [z, []] :- t [a c, b].',
+              'a b c.\na (b c).',
+              'type d a -> (((b))).',
+              'a b :- (a b).',
+              'a [a].']
 
     outputs = ['MODULE (ID test)\n',
                'MODULE (ID test)\ntypedef (ID t) ((ID f) -> (ID o))\n',
@@ -44,10 +48,17 @@ def test_integrate_correct(tmp_path, monkeypatch, capsys):
                'z)))\n',
                'relation head (ID f)\nrelation head (ID f) body (ID g)\nrelation head (ID f) body (disjunction ('
                'conjunction (ID g) (ID h)) (ID t))\n',
-               'relation head atom ((ID a) [[(variable X), [(variable H) | (variable T)]] | (variable Z)])\n',
-               'relation head atom ((ID g) [(variable X)] (variable Y)) body atom ((ID f) (variable X) (variable Y))\n',
-               'relation head atom ((ID f) [(ID a), [(variable A) | (variable B)], atom ((ID a) atom ((ID b) (ID '
-               'c)))] atom ((ID x) atom ((ID y) [(ID z), []]))) body atom ((ID t) [atom ((ID a) (ID c)), (ID b)])\n']
+               'relation head atom ((ID a) atom ([atom ([(variable X), atom ([(variable H) | (variable T)])]) | ('
+               'variable Z)]))\n',
+               'relation head atom ((ID g) atom ([(variable X)]) (variable Y)) body atom ((ID f) (variable X) ('
+               'variable Y))\n',
+               'relation head atom ((ID f) atom ([(ID a), atom ([(variable A) | (variable B)]), atom ((ID a) atom (('
+               'ID b) (ID c)))]) (ID x) (ID y) atom ([(ID z), atom ([])])) body atom ((ID t) atom ([atom ((ID a) (ID '
+               'c)), (ID b)]))\n',
+               'relation head atom ((ID a) (ID b) (ID c))\nrelation head atom ((ID a) atom ((ID b) (ID c)))\n',
+               'typedef (ID d) ((ID a) -> (ID b))\n',
+               'relation head atom ((ID a) (ID b)) body atom ((ID a) (ID b))\n',
+               'relation head atom ((ID a) atom ([(ID a)]))\n']
 
     assert len(inputs) == len(outputs)
 
@@ -168,6 +179,7 @@ def test_unit_type():
     assert type(parser('type filter (A -> (B -> C -> (A -> (list A)) -> C)) -> o.')) == Success
     assert type(parser('type filter string -> list A.')) == Success
     assert type(parser('type filter (A -> o) -> o.')) == Success
+    assert type(parser('type d a -> (((b))).')) == Success
 
     assert type(parser('type foo ->.')) == Failure
     assert type(parser('tupe x o.')) == Failure

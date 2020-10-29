@@ -39,11 +39,11 @@ class PrologParser(TextParsers, whitespace=r'[ \t\n]*'):
 
     module = (MODULE & ID & DOT > (lambda x: "MODULE " + x[1])) | lit('')
 
-    atom = (atom_args > (lambda x: 'atom (' + x + ')')) | ID
-    atom_args = (ID & rep1(atom_brackets | VAR | ID | LIST)) > (lambda x: x[0] + ' ' + ' '.join(x[1]))
-    atom_brackets = (atom | VAR > join_list) | (LBR & atom_brackets & RBR > (lambda x: join_list(x[1])))
+    atom = (LIST | atom_args > (lambda x: 'atom (' + x + ')')) | ID
+    atom_args = (ID & rep1(VAR | ID | atom_brackets | LIST)) > (lambda x: x[0] + ' ' + ' '.join(x[1]))
+    atom_brackets = (atom | VAR > join_list) | (LBR >> atom_brackets << RBR)
 
-    T = (LBR & body & RBR) | atom > join_list
+    T = (LBR >> body << RBR) | atom > join_list
     M = ((T & COMMA & M) > (lambda x: '(conjunction ' + x[0] + ' ' + x[2] + ')')) | (T > join_list)
     body = ((M & SEMICOLON & body) > (lambda x: '(disjunction ' + x[0] + ' ' + x[2] + ')')) | (M > join_list)
 
@@ -51,7 +51,7 @@ class PrologParser(TextParsers, whitespace=r'[ \t\n]*'):
     rel_body = ((atom & CORK & body & DOT) > (lambda x: 'relation ' + 'head ' + x[0] + ' body ' + x[2]))
     relation = rel_no_body | rel_body
 
-    typeseq_brackets = (LBR & typeseq & RBR) > join_list
+    typeseq_brackets = (LBR >> typeseq << RBR) > join_list
     typeseq = rep1sep(atom | VAR | typeseq_brackets, ARROW) > (lambda x: ' -> '.join(x))
     typedef = (TYPE & ID & typeseq << DOT) > (lambda x: 'typedef ' + x[1] + ' (' + x[2] + ')')
 
